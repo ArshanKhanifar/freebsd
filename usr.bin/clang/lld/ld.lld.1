@@ -50,7 +50,7 @@ as GNU linkers.
 The following options are available:
 .Bl -tag -width indent
 .It Fl -allow-multiple-definition
-Allow multiple definitions.
+If this option is provided, the linker will not report an error when a symbol is defined multiple times, and the first definition of the symbol will get used.
 .It Fl -as-needed
 Only set
 .Dv DT_NEEDED
@@ -76,7 +76,13 @@ Use colors in diagnostics.
 .It Fl -color-diagnostics
 Use colors in diagnostics.
 .It Fl -compress-debug-sections= Ns Ar value
-Compress DWARF debug sections.
+Compress DWARF debug sections. Defaults to no compression.
+Available options are: none, zlib, zlib-gnu
+.Bl -tag -width indent-two
+.It none: no compression.
+.It zlib: zlib style compression
+.It zlib-gnu: zlib-gnu style compression
+.El
 .It Fl -define-common
 Assign space to common symbols.
 .It Fl -defsym= Ns Ar value
@@ -357,8 +363,56 @@ Do not allow relocations against read-only segments.
 This is the default.
 .El
 .El
+
+.Sh EXAMPLES
+.Pp
+Let's say we have a simple hello.c program which prints hello: 
+.Pp
+.Dl $ cat hello.c
+.Pp
+.Dl	#include <stdio.h>
+.Dl	
+.Dl	int main() {
+.Dl		printf("hello\n");
+.Dl		return 0;
+.Dl	}
+
+.Pp
+If we provide the -v option for clang, it will tell us what parameters are getting passed to the linker (clang invokes the linker after compilation): 
+.Pp
+.Dl $ cc -v hello.c
+.Pp 
+A trimmed-down view of the output is: 
+.Pp
+.Dl "/usr/bin/ld" --eh-frame-hdr -dynamic-linker /libexec/ld-elf.so.1 --hash-style=both --enable-new-dtags -o a.out /usr/lib/crt1.o /usr/lib/crti.o /usr/lib/crtbegin.o -L/usr/lib /tmp/hello-4d48bb.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/crtend.o /usr/lib/crtn.o
+.Pp
+As you can see, the loader (/usr/bin/ld.lld) has been invoked with these options:
+.Bl -tag -width -indent
+.It Cm
+--eh-frame-hdr
+.It Cm 
+-dynamic-linker
+.It Cm 
+--hash-style
+.It Cm 
+--enable-new-dtags
+.It Cm 
+-lgcc
+.It Cm 
+--as-needed
+.It Cm 
+-lgcc_s
+.It Cm 
+--no-as-needed
+.It Cm 
+-lc
+.El
+.Pp
+If you wish to pass in your own commands, you can compile with clang providing -o option which will produce the object files for you, then you can use lld to link them.
+Another way is to pass in linker parameters to clang itself using the -Xlinker flag (see cc manual).
+
 .Sh IMPLEMENTATION NOTES
 The targets supported by
-.Nm
+.Nm 
 are:
 elf32-i386 elf32-iamcu elf32-littlearm elf32-ntradbigmips elf32-ntradlittlemips elf32-powerpc elf32-tradbigmips elf32-tradlittlemips elf32-x86-64 elf64-amdgpu elf64-littleaarch64 elf64-powerpc elf64-tradbigmips elf64-tradlittlemips elf64-x86-64
