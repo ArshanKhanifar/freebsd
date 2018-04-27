@@ -294,6 +294,7 @@ vendor BRAINBOXES	0x05d1	Brainboxes Limited
 vendor ULTIMA		0x05d8	Ultima
 vendor AXIOHM		0x05d9	Axiohm Transaction Solutions
 vendor MICROTEK		0x05da	Microtek
+vendor MICROCHIP	0x0424	Microchip
 vendor SUNTAC		0x05db	SUN Corporation
 vendor LEXAR		0x05dc	Lexar Media
 vendor ADDTRON		0x05dd	Addtron
@@ -4311,6 +4312,9 @@ product SMART PL2303		0x2303	Serial adapter
 /* SmartBridges products */
 product SMARTBRIDGES SMARTLINK	0x0001	SmartLink USB Ethernet
 product SMARTBRIDGES SMARTNIC	0x0003	smartNIC 2 PnP Ethernet
+
+/* Microchip products */
+product MICROCHIP LAN7800	0x7800	USB/Ethernet
 
 /* SMC products */
 product SMC 2102USB		0x0100	10Mbps Ethernet
