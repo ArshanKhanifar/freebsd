@@ -124,7 +124,7 @@ SYSCTL_INT(_hw_usb_lan78xx, OID_AUTO, debug, CTLFLAG_RWTUN, &lan78xx_debug, 0,
  * Various supported device vendors/products.
  */
 static const struct usb_device_id lan78xx_devs[] = {
-#define LAN78XX_DEV(p,i) { USB_VPI(USB_VENDOR_MICROCHIP, USB_PRODUCT_MICROCHIP_##p, i) }
+#define LAN78XX_DEV(p,i) { USB_VPI(USB_VENDOR_SMC2, USB_PRODUCT_SMC2_##p, i) }
 	LAN78XX_DEV(LAN7800, 0),
 #undef LAN78XX_DEV
 };
