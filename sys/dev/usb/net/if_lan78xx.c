@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD$");
  *
  * This driver closely resembles the old if_smsc driver, specific procedures 
  * relating to the lan78xx chip are modelled based on the lan78xx Linux driver
- * written and copyrighted by Microchip:
+ * written by Microchip:
  * https://github.com/torvalds/linux/blob/master/drivers/net/usb/lan78xx.c
  *
  * UNIMPLEMENTED FEATURES
