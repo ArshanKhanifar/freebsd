@@ -26,10 +26,10 @@
  */
 
 /*
- * Definitions for the Microchip LAN78XX USB to ethernet controllers.
+ * Definitions for the Microchip LAN78XX USB-to-Ethernet controllers.
  *
- * This information was mostly brought from the LAN7800 manual. However,
- * some undocumented registers come from the lan78xx driver in Linux.
+ * This information was mostly taken from the LAN7800 manual. However,
+ * some undocumented registers come from the Linux driver (lan78xx.h).
  *
  */
 
@@ -122,7 +122,7 @@
 
 #define LAN78XX_E2P_CMD			0x040
 #define LAN78XX_E2P_CMD_MASK_		0x70000000UL
-#define LAN78XX_E2P_CMD_ADDR_MAS	0x000001FFUL
+#define LAN78XX_E2P_CMD_ADDR_MASK_	0x000001FFUL
 #define LAN78XX_E2P_CMD_BUSY_		(0x1UL << 31)
 #define LAN78XX_E2P_CMD_READ_		(0x0UL << 28)
 #define LAN78XX_E2P_CMD_WRITE_		(0x3UL << 28)

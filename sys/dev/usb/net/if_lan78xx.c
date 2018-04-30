@@ -1,8 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
- * Copyright (C) 2012
- * Ben Gray <bgray@freebsd.org>.
+ * Copyright (C) 2012 Ben Gray <bgray@freebsd.org>.
  * Copyright (C) 2018 The FreeBSD Foundation
  * This software was developed by Arshan Khanifar <arshankhanifar@gmail.com>
  * under sponsorship from the FreeBSD Foundation.
@@ -35,16 +34,17 @@
 __FBSDID("$FreeBSD$");
 
 /*
- * Microchip LAN78XX devices (http://www.microchip.com/)
+ * Microchip LAN78XX devices (http://www.microchip.com/wwwproducts/en/LAN7800)
  * 
  * The LAN78XX devices are stand-alone USB to Ethernet chips that
  * support USB 3.1 and 10/100/1000 Mbps Ethernet.
  *
- * This driver is closely modelled on the Linux driver written and copyrighted
- * by Microchip.
+ * This driver closely resembles the old if_smsc driver, specific procedures 
+ * relating to the lan78xx chip are modelled based on the lan78xx Linux driver
+ * written and copyrighted by Microchip:
+ * https://github.com/torvalds/linux/blob/master/drivers/net/usb/lan78xx.c
  *
- *
- * REMAINING FEATURES
+ * UNIMPLEMENTED FEATURES
  * ------------------
  * There are a bunch of features that the chip supports but have not been implemented
  * in this driver yet. This will serve as a TODO list for the author and other 
@@ -53,7 +53,8 @@ __FBSDID("$FreeBSD$");
  * RX checksumming works with ICMP messages, but its broken for TCP/UDP packets.
  * 2. Direct address translation filtering: implemented but not tested yet. 
  * 3. VLAN tag removal: not implemented yet.
- * 4. Reading MAC address from the device tree: this is specific to Raspberry PI.
+ * 4. Reading MAC address from the device tree: this is specific to R-Pi 3B+ model.
+ *    Currently, the driver assigns a random MAC address itself.
  * 5. Support for USB interrupt endpoints.
  * 6. Latency Tolerance Messaging (LTM) support.
  * 7. TCP LSO support.
@@ -100,7 +101,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/usb/usbdi_util.h>
 #include "usbdevs.h"
 
-#define USB_DEBUG lan78xx_debug
+#define USB_DEBUG_VAR lan78xx_debug
 #include <dev/usb/usb_debug.h>
 #include <dev/usb/usb_process.h>
 
@@ -156,7 +157,8 @@ static const struct usb_device_id lan78xx_devs[] = {
 enum {
 	LAN78XX_BULK_DT_RD,
 	LAN78XX_BULK_DT_WR,
-	/* the LAN78XX device does support interrupt endpoints,
+	/* 
+	 * the LAN78XX device does support interrupt endpoints,
 	 * but they're not needed as we poll on MII status.
 	 * LAN78XX_INTR_DT_WR,
 	 * LAN78XX_INTR_DT_RD,
@@ -199,10 +201,7 @@ static miibus_readreg_t lan78xx_miibus_readreg;
 static miibus_writereg_t lan78xx_miibus_writereg;
 static miibus_statchg_t lan78xx_miibus_statchg;
 
-#if __FreeBSD_version > 1000000
 static int lan78xx_attach_post_sub(struct usb_ether *ue);
-#endif
-
 static uether_fn_t lan78xx_attach_post;
 static uether_fn_t lan78xx_init;
 static uether_fn_t lan78xx_stop;
@@ -246,9 +245,7 @@ static const struct usb_config lan78xx_config[LAN78XX_N_TRANSFER] = {
 
 static const struct usb_ether_methods lan78xx_ue_methods = {
 	.ue_attach_post = lan78xx_attach_post,
-#if __FreeBSD_version > 1000000
 	.ue_attach_post_sub = lan78xx_attach_post_sub,
-#endif
 	.ue_start = lan78xx_start,
 	.ue_ioctl = lan78xx_ioctl,
 	.ue_init = lan78xx_init,
@@ -272,7 +269,6 @@ static const struct usb_ether_methods lan78xx_ue_methods = {
  *	RETURNS:
  *	0 on success, a USB_ERR_?? error code on failure.
  */
-
 static int
 lan78xx_read_reg(struct lan78xx_softc *sc, uint32_t off, uint32_t *data)
 {
@@ -412,7 +408,7 @@ lan78xx_eeprom_read_raw(struct lan78xx_softc *sc, uint16_t off, uint8_t *buf, ui
 	for (i = 0; i < buflen; i++) {
 	
 		val = LAN78XX_E2P_CMD_BUSY_ | LAN78XX_E2P_CMD_READ_;
-		val |= (LAN78XX_E2P_CMD_ADDR_MASK & (off + i));
+		val |= (LAN78XX_E2P_CMD_ADDR_MASK_ & (off + i));
 		if ((err = lan78xx_write_reg(sc, LAN78XX_E2P_CMD, val)) != 0)
 			goto done;
 		
@@ -555,7 +551,6 @@ done:
  *	0 on success, or a USB_ERR_?? error code on failure.
  *
  */
-
 static int
 lan78xx_otp_read(struct lan78xx_softc *sc, uint16_t off, uint8_t *buf, uint16_t buflen) 
 {
@@ -623,7 +618,6 @@ done:
  *	RETURNS:
  *	Returns 0 on success or a negative error code.
  */
-
 static int
 lan78xx_set_rx_max_frame_length(struct lan78xx_softc *sc, int size)
 {
@@ -1402,7 +1396,6 @@ tr_setup:
  *	H/W to match the UE settings and can be called after a reset.
  *
  */
-
 static void
 lan78xx_attach_post(struct usb_ether *ue)
 {
@@ -1473,7 +1466,6 @@ lan78xx_attach_post(struct usb_ether *ue)
  *	RETURNS:
  *	Returns 0 on success or a negative error code.
  */
-#if __FreeBSD_version > 1000000
 static int
 lan78xx_attach_post_sub(struct usb_ether *ue)
 {
@@ -1529,7 +1521,6 @@ lan78xx_attach_post_sub(struct usb_ether *ue)
 
 	return 0;
 }
-#endif
 
 /**
  *	lan78xx_start - Starts communication with the LAN78XX95xx chip
@@ -1597,11 +1588,7 @@ lan78xx_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		
 		LAN78XX_UNLOCK(sc);
 		if (reinit)
-#if __FreeBSD_version > 1000000
 			uether_init(ue);
-#else
-			ifp->if_init(ue);
-#endif
 
 	} else {
 		rc = uether_ioctl(ifp, cmd, data);
@@ -1675,7 +1662,6 @@ lan78xx_set_addr_filter(struct lan78xx_softc *sc, int index, uint8_t addr[ETHER_
  *	RETURNS:
  *	0 if write successful.
  */
-
 static int
 lan78xx_dataport_write(struct lan78xx_softc *sc, uint32_t ram_select, uint32_t addr,
 									uint32_t length, uint32_t *buf)
@@ -1719,7 +1705,6 @@ done:
  * corresponding registers and RAMs.
  *
  */
-
 static void
 lan78xx_multicast_write(struct lan78xx_softc *sc)
 {
@@ -1943,26 +1928,6 @@ lan78xx_init(struct usb_ether *ue)
 
 	/* Cancel pending I/O */
 	lan78xx_stop(ue);
-#if __FreeBSD_version <= 1000000
-	/* On earlier versions this was the first place we could tell the system
-	 * that we supported h/w csuming, however this is only called after the
-	 * the interface has been brought up - not ideal.  
-	 */
-
-	ifp->if_hwassist = 0;
-	if (LAN78XX_DEFAULT_RX_CSUM_ENABLE)
-		ifp->if_capabilities |= IFCAP_RXCSUM;
-
-	if (LAN78XX_DEFAULT_TX_CSUM_ENABLE)
-		ifp->if_capabilities |= IFCAP_TXCSUM;
-	/* TX checksuming is disabled for now
-	ifp->if_capabilities |= IFCAP_TXCSUM;
-	ifp->if_capenable |= IFCAP_TXCSUM;
-	ifp->if_hwassist = CSUM_TCP | CSUM_UDP;
-	*/
-	
-	ifp->if_capenable = ifp->if_capabilities;
-#endif
 
 	/* Reset the ethernet interface. */
 	lan78xx_reset(sc);
