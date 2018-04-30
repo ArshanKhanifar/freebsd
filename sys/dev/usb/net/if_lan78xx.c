@@ -89,13 +89,6 @@ __FBSDID("$FreeBSD$");
 
 #include "opt_platform.h"
 
-/* For reading the mac address from device tree.*/
-#ifdef FDT
-#include <dev/fdt/fdt_common.h>
-#include <dev/ofw/ofw_bus.h>
-#include <dev/ofw/ofw_bus_subr.h>
-#endif
-
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
 #include <dev/usb/usbdi_util.h>
