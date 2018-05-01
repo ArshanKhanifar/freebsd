@@ -994,14 +994,14 @@ lan78xx_chip_init(struct lan78xx_softc *sc)
 
 	/* configuring the burst cap */
 	switch (usbd_get_speed(sc->sc_ue.ue_udev)) {
-		case USB_SPEED_SUPER:	
-			burst_cap = LAN78XX_DEFAULT_BURST_CAP_SIZE/LAN78XX_SS_USB_PKT_SIZE;
-			break;
-		case USB_SPEED_HIGH:	
-			burst_cap = LAN78XX_DEFAULT_BURST_CAP_SIZE/LAN78XX_HS_USB_PKT_SIZE;
-			break;
-		default:
-			burst_cap = LAN78XX_DEFAULT_BURST_CAP_SIZE/LAN78XX_FS_USB_PKT_SIZE;
+	case USB_SPEED_SUPER:
+		burst_cap = LAN78XX_DEFAULT_BURST_CAP_SIZE/LAN78XX_SS_USB_PKT_SIZE;
+		break;
+	case USB_SPEED_HIGH:	
+		burst_cap = LAN78XX_DEFAULT_BURST_CAP_SIZE/LAN78XX_HS_USB_PKT_SIZE;
+		break;
+	default:
+		burst_cap = LAN78XX_DEFAULT_BURST_CAP_SIZE/LAN78XX_FS_USB_PKT_SIZE;
 	}
 
 	lan78xx_write_reg(sc, LAN78XX_BURST_CAP, burst_cap);
@@ -1173,22 +1173,24 @@ lan78xx_bulk_read_callback(struct usb_xfer *xfer, usb_error_t error)
 			off = ((off + 0x3) & ~0x3);
 
 			/* extract RX CMD A */
+			if (off + sizeof(rx_cmd_a) > actlen)
+				goto tr_setup;
 			usbd_copy_out(pc, off, &rx_cmd_a, sizeof(rx_cmd_a));
 			off += (sizeof(rx_cmd_a));
 			rx_cmd_a = le32toh(rx_cmd_a);
 
-			if (off > actlen)
-				goto tr_setup;
 
 			/* extract RX CMD B */
+			if (off + sizeof(rx_cmd_b) > actlen)
+				goto tr_setup;
 			usbd_copy_out(pc, off, &rx_cmd_b, sizeof(rx_cmd_b));
 			off += (sizeof(rx_cmd_b));
 			rx_cmd_b = le32toh(rx_cmd_b);
 
-			if (off > actlen)
-				goto tr_setup;
 
 			/* extract RX CMD C */
+			if (off + sizeof(rx_cmd_c) > actlen)
+				goto tr_setup;
 			usbd_copy_out(pc, off, &rx_cmd_c, sizeof(rx_cmd_c));
 			off += (sizeof(rx_cmd_c));
 			rx_cmd_c = le32toh(rx_cmd_c);
