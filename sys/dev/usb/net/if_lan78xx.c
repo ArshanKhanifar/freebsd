@@ -10,10 +10,10 @@
  * modification, are permitted provided that the following conditions
  * are met:
  * 1. Redistributions of source code must retain the above copyright
- *	  notice, this list of conditions and the following disclaimer.
+ *		notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *	  notice, this list of conditions and the following disclaimer in the
- *	  documentation and/or other materials provided with the distribution.
+ *		notice, this list of conditions and the following disclaimer in the
+ *		documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD$");
  * 2. Direct address translation filtering: implemented but not tested yet. 
  * 3. VLAN tag removal: not implemented yet.
  * 4. Reading MAC address from the device tree: this is specific to R-Pi 3B+ model.
- *    Currently, the driver assigns a random MAC address itself.
+ *		Currently, the driver assigns a random MAC address itself.
  * 5. Support for USB interrupt endpoints.
  * 6. Latency Tolerance Messaging (LTM) support.
  * 7. TCP LSO support.
@@ -160,19 +160,19 @@ enum {
 };
 
 struct lan78xx_softc {
-	struct usb_ether  sc_ue;
-	struct mtx		  sc_mtx;
+	struct usb_ether	sc_ue;
+	struct mtx			sc_mtx;
 	struct usb_xfer  *sc_xfer[LAN78XX_N_TRANSFER];
-	int				  sc_phyno;
+	int					sc_phyno;
 
 	/* The following stores the settings in the mac control (MAC_CSR) register */
-	uint32_t		  sc_rfe_ctl;
-	uint32_t		  sc_mdix_ctl;
-	uint32_t		  sc_rev_id;
-	uint32_t		  sc_mchash_table[LAN78XX_DP_SEL_VHF_HASH_LEN];
-	uint32_t		  sc_pfilter_table[LAN78XX_NUM_PFILTER_ADDRS_][2];
+	uint32_t			sc_rfe_ctl;
+	uint32_t			sc_mdix_ctl;
+	uint32_t			sc_rev_id;
+	uint32_t			sc_mchash_table[LAN78XX_DP_SEL_VHF_HASH_LEN];
+	uint32_t			sc_pfilter_table[LAN78XX_NUM_PFILTER_ADDRS_][2];
 
-	uint32_t		  sc_flags;
+	uint32_t			sc_flags;
 #define LAN78XX_FLAG_LINK	0x0001
 };
 
@@ -231,7 +231,8 @@ static const struct usb_config lan78xx_config[LAN78XX_N_TRANSFER] = {
 		.callback = lan78xx_bulk_read_callback,
 		.timeout = 0,	/* no timeout */
 	},
-	/* The LAN78XX chip supports interrupt endpoints, however they aren't
+	/* 
+	 * The LAN78XX chip supports interrupt endpoints, however they aren't
 	 * needed as we poll on the MII status.
 	 */
 };
@@ -992,7 +993,7 @@ lan78xx_chip_init(struct lan78xx_softc *sc)
 	 */
 
 	/* configuring the burst cap */
-	switch(usbd_get_speed(sc->sc_ue.ue_udev)) {
+	switch (usbd_get_speed(sc->sc_ue.ue_udev)) {
 		case USB_SPEED_SUPER:	
 			burst_cap = LAN78XX_DEFAULT_BURST_CAP_SIZE/LAN78XX_SS_USB_PKT_SIZE;
 			break;
@@ -1176,15 +1177,24 @@ lan78xx_bulk_read_callback(struct usb_xfer *xfer, usb_error_t error)
 			off += (sizeof(rx_cmd_a));
 			rx_cmd_a = le32toh(rx_cmd_a);
 
+			if (off > actlen)
+				goto tr_setup;
+
 			/* extract RX CMD B */
 			usbd_copy_out(pc, off, &rx_cmd_b, sizeof(rx_cmd_b));
 			off += (sizeof(rx_cmd_b));
 			rx_cmd_b = le32toh(rx_cmd_b);
 
+			if (off > actlen)
+				goto tr_setup;
+
 			/* extract RX CMD C */
 			usbd_copy_out(pc, off, &rx_cmd_c, sizeof(rx_cmd_c));
 			off += (sizeof(rx_cmd_c));
-			rx_cmd_b = le32toh(rx_cmd_c);
+			rx_cmd_c = le32toh(rx_cmd_c);
+
+			if (off > actlen)
+				goto tr_setup;
 
 			pktlen = (rx_cmd_a & LAN78XX_RX_CMD_A_LEN_MASK_);
 
@@ -1237,7 +1247,7 @@ lan78xx_bulk_read_callback(struct usb_xfer *xfer, usb_error_t error)
 						 * of the transfer and put in the csum_data field.
 						 */
 						usbd_copy_out(pc, (off + pktlen),
-									  &m->m_pkthdr.csum_data, 2);
+										&m->m_pkthdr.csum_data, 2);
 
 						/* The data is copied in network order, but the
 						 * csum algorithm in the kernel expects it to be
@@ -1384,7 +1394,7 @@ tr_setup:
  *	lan78xx_attach_post - Called after the driver attached to the USB interface
  *	@ue: the USB ethernet device
  *
- *	This is where the chip is intialised for the first time.  This is different
+ *	This is where the chip is intialised for the first time.	This is different
  *	from the lan78xx_init() function in that that one is designed to setup the
  *	H/W to match the UE settings and can be called after a reset.
  *
@@ -1432,13 +1442,13 @@ lan78xx_attach_post(struct usb_ether *ue)
 				lan78xx_dbg_printf(sc, "MAC assigned randomly\n");
 				read_random(sc->sc_ue.ue_eaddr, ETHER_ADDR_LEN);
 				sc->sc_ue.ue_eaddr[0] &= ~0x01;		/* unicast */
-				sc->sc_ue.ue_eaddr[0] |=  0x02;		/* locally administered */
+				sc->sc_ue.ue_eaddr[0] |=	0x02;		/* locally administered */
 			}
 		} else {
 			lan78xx_dbg_printf(sc, "MAC assigned randomly\n");
 			arc4rand(sc->sc_ue.ue_eaddr, ETHER_ADDR_LEN, 0);
 			sc->sc_ue.ue_eaddr[0] &= ~0x01;		/* unicast */
-			sc->sc_ue.ue_eaddr[0] |=  0x02;		/* locally administered */
+			sc->sc_ue.ue_eaddr[0] |=	0x02;		/* locally administered */
 		}
 	} else {
 		lan78xx_dbg_printf(sc, "MAC assigned from registers\n");
@@ -1518,9 +1528,6 @@ lan78xx_attach_post_sub(struct usb_ether *ue)
 /**
  *	lan78xx_start - Starts communication with the LAN78XX95xx chip
  *	@ue: USB ether interface
- *
- *	
- *
  */
 static void
 lan78xx_start(struct usb_ether *ue)
@@ -1606,7 +1613,7 @@ lan78xx_reset(struct lan78xx_softc *sc)
 	cd = usbd_get_config_descriptor(sc->sc_ue.ue_udev);
 
 	err = usbd_req_set_config(sc->sc_ue.ue_udev, &sc->sc_mtx,
-							  cd->bConfigurationValue);
+								cd->bConfigurationValue);
 	if (err)
 		lan78xx_warn_printf(sc, "reset failed (ignored)\n");
 
@@ -2067,7 +2074,7 @@ lan78xx_attach(device_t dev)
 	/* Setup the endpoints for the Microchip LAN78xx device(s) */
 	iface_index = LAN78XX_IFACE_IDX;
 	err = usbd_transfer_setup(uaa->device, &iface_index, sc->sc_xfer,
-							  lan78xx_config, LAN78XX_N_TRANSFER, sc, &sc->sc_mtx);
+								lan78xx_config, LAN78XX_N_TRANSFER, sc, &sc->sc_mtx);
 	if (err) {
 		device_printf(dev, "error: allocating USB transfers failed\n");
 		goto detach;
